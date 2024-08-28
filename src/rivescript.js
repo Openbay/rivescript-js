@@ -32,7 +32,6 @@ const sorting = require("./sorting");
 const inherit_utils = require("./inheritance");
 const { MemorySessionManager } = require("./sessions");
 const JSObjectHandler = require("./lang/javascript");
-const readDir = require("fs-readdir-recursive");
 
 /**
 RiveScript (hash options)
