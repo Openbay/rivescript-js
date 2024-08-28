@@ -301,21 +301,24 @@ const RiveScript = (function () {
 		running in a web browser or from node.
 		*/
 		runtime() {
-			var self = this;
+			// var self = this;
+
+			// Screw it
+			return "web";
 
 			// Webpack and browserify define `process.browser` so this is the best place
 			// to check if we're running in a web environment.
 			// @NOTE Thanks Keegan! https://github.com/aichaos/rivescript-js/issues/318
-			if (
-				(typeof process !== "undefined" && process.browser) ||
-				typeof window === "undefined"
-			) {
-				return "web";
-			}
+			// if (
+			// 	(typeof process !== "undefined" && process.browser) ||
+			// 	typeof window === "undefined"
+			// ) {
+			// 	return "web";
+			// }
 
-			// Import the Node filesystem library.
-			self._node.fs = require("fs");
-			return "node";
+			// // Import the Node filesystem library.
+			// self._node.fs = require("fs");
+			// return "node";
 		}
 
 		/**
