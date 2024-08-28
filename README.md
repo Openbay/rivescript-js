@@ -2,6 +2,10 @@
 
 [![Build Status](https://travis-ci.org/aichaos/rivescript-js.svg?branch=master)](https://travis-ci.org/aichaos/rivescript-js)
 
+# Changes
+
+Updated check for runtime (node/web)
+
 ## INTRODUCTION
 
 This is a RiveScript interpreter library for JavaScript. RiveScript is a

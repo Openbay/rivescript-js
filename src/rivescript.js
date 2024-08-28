@@ -204,14 +204,16 @@ const RiveScript = (function () {
 			self._caseSensitive = opts.caseSensitive ? opts.caseSensitive : false;
 
 			// UTF-8 punctuation, overridable by the user.
-			self.unicodePunctuation = opts.unicodePunctuation ? opts.unicodePunctuation : new RegExp(/[.,!?;:]/g);
+			self.unicodePunctuation = opts.unicodePunctuation
+				? opts.unicodePunctuation
+				: new RegExp(/[.,!?;:]/g);
 
 			// Customized error messages.
 			self.errors = {
 				replyNotMatched: "ERR: No Reply Matched",
 				replyNotFound: "ERR: No Reply Found",
 				objectNotFound: "[ERR: Object Not Found]",
-				deepRecursion: "ERR: Deep Recursion Detected"
+				deepRecursion: "ERR: Deep Recursion Detected",
 			};
 			if (typeof opts.errors === "object") {
 				let ref = opts.errors;
@@ -303,7 +305,11 @@ const RiveScript = (function () {
 
 			// Webpack and browserify define `process.browser` so this is the best place
 			// to check if we're running in a web environment.
-			if (process.browser) {
+			// @NOTE Thanks Keegan! https://github.com/aichaos/rivescript-js/issues/318
+			if (
+				(typeof process !== "undefined" && process.browser) ||
+				typeof window === "undefined"
+			) {
 				return "web";
 			}
 
@@ -345,7 +351,7 @@ const RiveScript = (function () {
 			var self = this;
 
 			// Provided a file and line?
-			if ((filename != null) && (lineno != null)) {
+			if (filename != null && lineno != null) {
 				message += ` at ${filename} line ${lineno}`;
 			}
 			if (self._onDebug) {
@@ -396,17 +402,19 @@ const RiveScript = (function () {
 			for (let i = 0, len = path.length; i < len; i++) {
 				let file = path[i];
 				self.say(`Request to load file: ${file}`);
-				promises.push(function (f) {
-					// This function returns a Promise. How are we going to load
-					// the file?
-					if (self._runtime === "web") {
-						// Via ajax!
-						return self._ajaxLoadFile(f);
-					} else {
-						// With node fs module!
-						return self._nodeLoadFile(f);
-					}
-				}(file));
+				promises.push(
+					(function (f) {
+						// This function returns a Promise. How are we going to load
+						// the file?
+						if (self._runtime === "web") {
+							// Via ajax!
+							return self._ajaxLoadFile(f);
+						} else {
+							// With node fs module!
+							return self._nodeLoadFile(f);
+						}
+					})(file)
+				);
 			}
 
 			// The final Promise to return.
@@ -415,10 +423,12 @@ const RiveScript = (function () {
 			});
 
 			// Legacy callback style?
-			if (typeof (onSuccess) === "function") {
-				self.warn("DEPRECATED: RiveScript.loadFile() now returns a Promise instead of using callbacks")
+			if (typeof onSuccess === "function") {
+				self.warn(
+					"DEPRECATED: RiveScript.loadFile() now returns a Promise instead of using callbacks"
+				);
 				return promise.then(onSuccess).catch(function (err, filename, lineno) {
-					if (typeof (onError) === "function") {
+					if (typeof onError === "function") {
 						onError.call(null, err, filename, lineno);
 					}
 				});
@@ -533,10 +543,12 @@ const RiveScript = (function () {
 			});
 
 			// Legacy callback-style?
-			if (typeof (onSuccess) === "function") {
-				self.warn("DEPRECATED: RiveScript.loadDirectory() now returns a Promise instead of using callbacks")
+			if (typeof onSuccess === "function") {
+				self.warn(
+					"DEPRECATED: RiveScript.loadDirectory() now returns a Promise instead of using callbacks"
+				);
 				return promise.then(onSuccess).catch(function (err, filename, lineno) {
-					if (typeof (onError) === "function") {
+					if (typeof onError === "function") {
 						onError.call(null, err, filename, lineno);
 					}
 				});
@@ -578,7 +590,7 @@ const RiveScript = (function () {
 			// Get the "abstract syntax tree"
 			let ok = true;
 			let ast = self.parser.parse(filename, code, (err, fn, ln) => {
-				if (typeof (onError) === "function") {
+				if (typeof onError === "function") {
 					onError.call(null, err, fn, ln);
 				}
 				ok = false;
@@ -590,12 +602,15 @@ const RiveScript = (function () {
 				if (!ast.begin.hasOwnProperty(type)) {
 					continue;
 				}
-				let internal = `_${type}` // so "global" maps to self._global
+				let internal = `_${type}`; // so "global" maps to self._global
 
 				for (let name in vars) {
 					let value = vars[name];
-					if (type === 'sub' || type === 'person') {
-						self[internal + "max"] = Math.max(self[internal + "max"], name.split(" ").length);
+					if (type === "sub" || type === "person") {
+						self[internal + "max"] = Math.max(
+							self[internal + "max"],
+							name.split(" ").length
+						);
 					}
 					if (!vars.hasOwnProperty(name)) {
 						continue;
@@ -665,7 +680,9 @@ const RiveScript = (function () {
 				// Have a handler for it?
 				if (self._handlers[object.language]) {
 					self._objlangs[object.name] = object.language;
-					results.push(self._handlers[object.language].load(object.name, object.code));
+					results.push(
+						self._handlers[object.language].load(object.name, object.code)
+					);
 				}
 			}
 
@@ -712,7 +729,9 @@ const RiveScript = (function () {
 
 			// Sort the substitution lists.
 			self._sorted.sub = sorting.sortList(Object.keys(self._sub));
-			return self._sorted.person = sorting.sortList(Object.keys(self._person));
+			return (self._sorted.person = sorting.sortList(
+				Object.keys(self._person)
+			));
 		}
 
 		/**
@@ -739,17 +758,17 @@ const RiveScript = (function () {
 					sub: utils.clone(self._sub),
 					person: utils.clone(self._person),
 					array: utils.clone(self._array),
-					triggers: []
+					triggers: [],
 				},
 				topics: utils.clone(self._topics),
 				inherits: utils.clone(self._inherits),
 				includes: utils.clone(self._includes),
-				objects: {}
+				objects: {},
 			};
 
 			for (let key in self._handlers) {
 				result.objects[key] = {
-					_objects: utils.clone(self._handlers[key]._objects)
+					_objects: utils.clone(self._handlers[key]._objects),
 				};
 			}
 
@@ -812,11 +831,15 @@ const RiveScript = (function () {
 				return;
 			}
 
-			return self._node.fs.writeFile(filename, self.stringify(deparsed), function (err) {
-				if (err) {
-					return self.warn(`Error writing to file ${filename}: ${err}`);
+			return self._node.fs.writeFile(
+				filename,
+				self.stringify(deparsed),
+				function (err) {
+					if (err) {
+						return self.warn(`Error writing to file ${filename}: ${err}`);
+					}
 				}
-			});
+			);
 		}
 
 		////////////////////////////////////////////////////////////////////////
@@ -845,7 +868,7 @@ const RiveScript = (function () {
 			if (obj === void 0) {
 				return delete self._handlers[lang];
 			} else {
-				return self._handlers[lang] = obj;
+				return (self._handlers[lang] = obj);
 			}
 		}
 
@@ -879,7 +902,7 @@ const RiveScript = (function () {
 			if (value === void 0) {
 				return delete self._global[name];
 			} else {
-				return self._global[name] = value;
+				return (self._global[name] = value);
 			}
 		}
 
@@ -895,7 +918,7 @@ const RiveScript = (function () {
 			if (value === void 0) {
 				return delete self._var[name];
 			} else {
-				return self._var[name] = value;
+				return (self._var[name] = value);
 			}
 		}
 
@@ -911,8 +934,8 @@ const RiveScript = (function () {
 			if (value === void 0) {
 				return delete self._sub[name];
 			} else {
-				self._submax = Math.max(name.split(' ').length, self._submax);
-				return self._sub[name] = value;
+				self._submax = Math.max(name.split(" ").length, self._submax);
+				return (self._sub[name] = value);
 			}
 		}
 
@@ -928,8 +951,8 @@ const RiveScript = (function () {
 			if (value === void 0) {
 				return delete self._person[name];
 			} else {
-				self._personmax = Math.max(name.split(' ').length, self._personmax);
-				return self._person[name] = value;
+				self._personmax = Math.max(name.split(" ").length, self._personmax);
+				return (self._person[name] = value);
 			}
 		}
 
@@ -1114,7 +1137,9 @@ const RiveScript = (function () {
 			var self = this;
 
 			if (self.brain._currentUser === null) {
-				self.warn("currentUser() is intended to be called from within a JS object macro!");
+				self.warn(
+					"currentUser() is intended to be called from within a JS object macro!"
+				);
 			}
 			return self.brain._currentUser;
 		}
@@ -1162,7 +1187,7 @@ const RiveScript = (function () {
 		*/
 		async reply(user, msg, scope) {
 			var self = this;
-			return (await self.brain.reply(user, msg, scope));
+			return await self.brain.reply(user, msg, scope);
 		}
 
 		/**
@@ -1197,20 +1222,23 @@ const RiveScript = (function () {
 		*/
 		replyAsync(user, msg, scope, callback) {
 			var self = this;
-			self.warn("DEPRECATED FUNCTION: RiveScript.replyAsync() is deprecated; use reply() instead");
+			self.warn(
+				"DEPRECATED FUNCTION: RiveScript.replyAsync() is deprecated; use reply() instead"
+			);
 
 			let reply = self.brain.reply(user, msg, scope);
 			if (callback) {
-				reply.then((result) => {
-					return callback.call(self, null, result);
-				}).catch((error) => {
-					return callback.call(self, error, null);
-				});
+				reply
+					.then((result) => {
+						return callback.call(self, null, result);
+					})
+					.catch((error) => {
+						return callback.call(self, error, null);
+					});
 			}
 			return reply;
 		}
-
-	};
+	}
 
 	/**
 	Promise Promise
