@@ -4,7 +4,7 @@
 
 # Changes
 
-Updated check for runtime (node/web)
+Updated check for runtime (node/web) to just return web
 
 ## INTRODUCTION
 
